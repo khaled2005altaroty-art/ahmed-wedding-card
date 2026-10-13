@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -18,28 +17,36 @@
             position: relative;
         }
 
-        #particles-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+        /* شاشة الظرف المغلق */
+        #envelope-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fbf8f2; display: flex; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.8s ease, visibility 0.8s ease;
         }
-        .particle {
-            position: absolute; background: #c5a059; border-radius: 50%; opacity: 0.35; animation: floatUp 15s infinite linear;
+        .envelope-box {
+            background: #ffffff; padding: 50px 30px; border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); border: 2px solid #c5a059;
+            max-width: 450px; width: 90%; cursor: pointer;
+            animation: pulseGlow 2s infinite;
         }
-        @keyframes floatUp {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            20% { opacity: 0.5; } 80% { opacity: 0.5; }
-            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(197, 160, 89, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
         }
+        .envelope-box h2 { font-family: 'Amiri', serif; font-size: 2rem; color: #8c6d33; margin-bottom: 10px; }
+        .envelope-box p { color: #666; font-size: 1.1rem; margin-bottom: 20px; }
+        .open-btn {
+            background: #c5a059; color: #fff; border: none; padding: 12px 35px;
+            font-size: 1.1rem; font-weight: bold; border-radius: 30px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(197,160,89,0.3); transition: transform 0.2s;
+        }
+        .open-btn:hover { transform: scale(1.05); }
 
-        .corner-decoration {
-            position: fixed; width: 60px; height: 60px; z-index: 999; pointer-events: none; border: 2px solid rgba(197, 160, 89, 0.7); opacity: 0.8;
-        }
-        .top-left { top: 15px; left: 15px; border-right: none; border-bottom: none; border-top-left-radius: 20px; }
-        .top-right { top: 15px; right: 15px; border-left: none; border-bottom: none; border-top-right-radius: 20px; }
-        .bottom-left { bottom: 15px; left: 15px; border-right: none; border-top: none; border-bottom-left-radius: 20px; }
-        .bottom-right { bottom: 15px; right: 15px; border-left: none; border-top: none; border-bottom-right-radius: 20px; }
-
+        /* محتوى الدعوة الأساسي */
         .main-content {
             max-width: 650px; margin: 0 auto; padding: 40px 15px; position: relative; z-index: 2;
+            display: none; /* مخفي لحين فتح الظرف */
         }
         section {
             background: #ffffff; margin: 30px 0; padding: 40px 25px; border-radius: 20px;
@@ -64,19 +71,34 @@
         .countdown-box span { display: block; font-size: 1.5rem; font-weight: 700; color: #8c6d33; }
         .countdown-box small { font-size: 0.75rem; color: #555555; }
 
-        @media (max-width: 600px) { .corner-decoration { width: 40px; height: 40px; } }
+        /* زر الموسيقى الثابت */
+        #music-control {
+            position: fixed; bottom: 20px; left: 20px; background: #c5a059; color: #ffffff; border: 2px solid #fff; padding: 8px 16px; border-radius: 25px; font-size: 0.95rem; font-weight: bold; cursor: pointer; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: none; align-items: center; gap: 8px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="corner-decoration top-left"></div>
-    <div class="corner-decoration top-right"></div>
-    <div class="corner-decoration bottom-left"></div>
-    <div class="corner-decoration bottom-right"></div>
+    <!-- شاشة الظرف -->
+    <div id="envelope-screen">
+        <div class="envelope-box" onclick="openInvitation()">
+            <div style="font-size: 3rem; margin-bottom: 10px;">💌</div>
+            <h2>دعوة زفاف أحمد ومنار</h2>
+            <p>اضغط هنا لفتح الظرف وقراءة الدعوة</p>
+            <button class="open-btn">فتح الدعوة ✨</button>
+        </div>
+    </div>
 
-    <div id="particles-container"></div>
+    <!-- ملف الصوت الخلفي (رابط موسيقى هادئة ورومانسية) -->
+    <audio id="wedding-audio" loop preload="auto">
+        <source src="https://www.bensound.com/bensound-music/bensound-tenderness.mp3" type="audio/mpeg">
+    </audio>
 
-    <div class="main-content">
+    <button id="music-control" onclick="toggleMusic()">
+        <span id="music-icon">⏸️</span> <span id="music-text">إيقاف الموسيقى</span>
+    </button>
+
+    <div class="main-content" id="mainContent">
         
         <section>
             <div class="basmala">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
@@ -143,21 +165,43 @@
     </div>
 
     <script>
-        function createParticles() {
-            const container = document.getElementById('particles-container');
-            for (let i = 0; i < 30; i++) {
-                let particle = document.createElement('div');
-                particle.className = 'particle';
-                let size = Math.random() * 4 + 2;
-                particle.style.width = size + 'px';
-                particle.style.height = size + 'px';
-                particle.style.left = Math.random() * 100 + 'vw';
-                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
-                particle.style.animationDelay = (Math.random() * 10) + 's';
-                container.appendChild(particle);
-            }
+        const audio = document.getElementById("wedding-audio");
+        const musicText = document.getElementById("music-text");
+        const musicIcon = document.getElementById("music-icon");
+        let isMusicPlaying = false;
+
+        function openInvitation() {
+            // إخفاء الظرف وإظهار الدعوة
+            const env = document.getElementById("envelope-screen");
+            env.style.opacity = '0';
+            setTimeout(() => {
+                env.style.display = 'none';
+                document.getElementById("mainContent").style.display = 'block';
+                document.getElementById("music-control").style.display = 'flex';
+            }, 800);
+
+            // تشغيل الموسيقى فور فتح الظرف
+            audio.play().then(() => {
+                isMusicPlaying = true;
+                musicText.innerText = "إيقاف الموسيقى";
+                musicIcon.innerText = "⏸️";
+            }).catch(e => {
+                console.log("Audio autoplay prevented");
+            });
         }
-        createParticles();
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                audio.pause();
+                musicText.innerText = "تشغيل الموسيقى";
+                musicIcon.innerText = "🎵";
+            } else {
+                audio.play();
+                musicText.innerText = "إيقاف الموسيقى";
+                musicIcon.innerText = "⏸️";
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
 
         const weddingDate = new Date("Dec 1, 2026 18:00:00").getTime();
         setInterval(function() {
